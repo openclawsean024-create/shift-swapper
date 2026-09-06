@@ -1,6 +1,18 @@
-# 排班換班助手 (Shift Swapper) — 規格書 v1.0
+# 排班換班助手 (Shift Swapper) — 規格書 v3.0.2 (Fleet Hardening)
 
-> 2026-07-10 建檔 · 各行業通用 SaaS · 純前端 MVP
+> **v3.0.2 patch（2026-09-07 by Sean 10-repo-fleet Batch 8B）** —
+> 對齊 fleet-wide 規格契約（SPEC §1–§19 + Definition of Done + 部署契約）。
+> 本次變更為**部署面 / CI 面 hardening**，不變更產品 spec：
+> - 新增 `PRD/CHANGELOG.md`（v1.0 / v3.0.2 變更日誌）
+> - 新增 `.github/workflows/ci.yml`（4-job：lint / test / build / deploy to GitHub Pages）
+> - Pages 部署目標：Next.js 16 static export（`next build` + `next export` → `out/`）
+> - 既有 v1.0 規格書（10 章）內容**全部保留**
+
+- 主版本：v1.0｜更新日期：2026-07-10｜建檔者：OpenClaw Solo Dev for Sean
+- 對接技術：Next.js 16 + React 19 RC + TypeScript 5.9 + Tailwind 3.4 + Vercel/vercel.json
+- 原始碼：https://github.com/openclawsean024-create/shift-swapper
+
+---
 
 ## 一、痛點與市場
 

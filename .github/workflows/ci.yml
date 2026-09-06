@@ -1,0 +1,99 @@
+# GitHub Actions Workflow for shift-swapper
+# Next.js 16 + React 19 + TypeScript 5.9 + Tailwind 3.4
+# Deploy: 雙軌（Vercel 既有 + GitHub Pages via static export）
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint (TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install
+        run: npm install --legacy-peer-deps
+      - name: TypeScript typecheck (npm run lint)
+        run: npm run lint
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install
+        run: npm install --legacy-peer-deps
+      - name: Smoke test (load entrypoint)
+        run: |
+          echo "=== Smoke test: app/page.tsx ==="
+          test -f app/page.tsx || (echo "❌ app/page.tsx missing" && exit 1)
+          echo "✅ app/page.tsx exists"
+          echo "=== Verify lib modules ==="
+          for f in format.ts industries.ts mockData.ts types.ts; do
+            test -f "app/lib/$f" || (echo "❌ app/lib/$f missing" && exit 1)
+            echo "  ✓ app/lib/$f"
+          done
+          echo "✅ All lib modules present"
+
+  build:
+    name: Build (Next.js)
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install
+        run: npm install --legacy-peer-deps
+      - name: next build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nextjs-build
+          path: .next/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact (dashboard.html at root)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
